@@ -84,6 +84,12 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
 </style>
 </head>
 <body>
+<script>
+(function(){
+  var th=localStorage.getItem('arcTheme')||'light';
+  document.documentElement.setAttribute('data-theme',th);
+})();
+</script>
 <div class="toast" id="toast"></div>
 <header>
   <a href="index.html" class="logo">Arc<span>Agent</span>Market</a>
