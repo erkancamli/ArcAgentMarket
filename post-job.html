@@ -239,9 +239,14 @@ async function postJob(){
       st.className='tx-status show pending';st.textContent='Step 1/2: Approve USDC in your wallet...';
       const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei);
       st.textContent='Approval sent ('+appTx.hash.slice(0,10)+'...). Waiting for confirmation...';
-      await appTx.wait();
+      // Wait for approval with polling instead of blocking wait()
+      let al=0n;
+      for(let i=0;i<20;i++){
+        await new Promise(r=>setTimeout(r,2000));
+        try{al=await usdc.allowance(wallet,JOBMARKET_ADDR);if(al>=rewardWei)break;}catch(e){}
+      }
       st.className='tx-status show success';
-      st.textContent='Approval confirmed! Click "Post Job" again to publish.';
+      st.textContent='Approved! Click the button again to post job.';
       _postStep=1;
       btn.disabled=false;
       btn.querySelector('span').textContent='Step 2: Post Job';
@@ -269,12 +274,10 @@ async function doPostJob(){
     st.className='tx-status show pending';st.textContent='Step 2/2: Confirm job posting in your wallet...';
     const jm=new ethers.Contract(JOBMARKET_ADDR,['function postJob(string,string,string,uint256,uint256) external returns (uint256)'],signer);
     const tx=await jm.postJob(title,desc,category,rewardWei,deadline);
-    st.textContent='Transaction sent ('+tx.hash.slice(0,10)+'...). Confirming...';
-    await tx.wait();
     st.className='tx-status show success';
-    st.textContent='Job posted successfully!';
+    st.textContent='Job posted! TX: '+tx.hash.slice(0,10)+'...';
     _postStep=0;
-    setTimeout(()=>window.location='jobs.html',2000);
+    setTimeout(()=>window.location='jobs.html',3000);
   }catch(e){
     st.className='tx-status show error';
     st.textContent=e.reason||e.shortMessage||'Failed to post job';
