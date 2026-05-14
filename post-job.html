@@ -237,7 +237,9 @@ async function postJob(){
       }
       btn.disabled=true;
       st.className='tx-status show pending';st.textContent='Step 1/2: Approve USDC in your wallet...';
-      const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei);
+      const feeData0=await signer.provider.getFeeData();
+      const gp0=feeData0.gasPrice||ethers.parseUnits('1','gwei');
+      const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei,{gasPrice:gp0,gasLimit:100000n});
       st.textContent='Approval sent ('+appTx.hash.slice(0,10)+'...). Waiting for confirmation...';
       // Wait for approval with polling instead of blocking wait()
       let al=0n;
@@ -273,23 +275,59 @@ async function doPostJob(){
     btn.disabled=true;
     st.className='tx-status show pending';st.textContent='Step 2/2: Confirm job posting in your wallet...';
     const jm=new ethers.Contract(JOBMARKET_ADDR,['function postJob(string,string,string,uint256,uint256) external returns (uint256)'],signer);
-    const tx=await jm.postJob(title,desc,category,rewardWei,deadline);
-    st.textContent='TX sent: '+tx.hash.slice(0,12)+'... waiting for confirmation';
-    const receipt=await Promise.race([
-      tx.wait(),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),90000))
-    ]);
-    if(receipt&&receipt.status===0)throw new Error('Transaction reverted');
-    st.className='tx-status show success';
-    st.textContent='Job posted successfully!';
+    const feeData=await signer.provider.getFeeData();
+    const gasPrice=feeData.gasPrice||ethers.parseUnits('1','gwei');
+    const tx=await jm.postJob(title,desc,category,rewardWei,deadline,{gasPrice,gasLimit:500000n});
+    const txUrl='https://testnet.arcscan.app/tx/'+tx.hash;
+    st.className='tx-status show pending';
+    st.innerHTML='TX sent! <a href="'+txUrl+'" target="_blank" style="color:var(--accent)">View on ArcScan ↗</a><br><span style="font-size:10px">Waiting for confirmation...</span>';
     _postStep=0;
-    setTimeout(()=>window.location='jobs.html',2000);
+    // Background polling - redirect when confirmed
+    (async()=>{
+      for(let i=0;i<30;i++){
+        await new Promise(r=>setTimeout(r,3000));
+        try{
+          const r=await signer.provider.getTransactionReceipt(tx.hash);
+          if(r&&r.status===1){
+            st.className='tx-status show success';
+            st.innerHTML='Job posted! <a href="'+txUrl+'" target="_blank" style="color:var(--success)">View TX ↗</a>';
+            setTimeout(()=>window.location='jobs.html',1500);
+            return;
+          }
+          if(r&&r.status===0){
+            st.className='tx-status show error';
+            st.innerHTML='Transaction failed. <a href="'+txUrl+'" target="_blank" style="color:var(--danger)">View TX ↗</a>';
+            btn.disabled=false;
+            return;
+          }
+        }catch(e){}
+      }
+    })();
   }catch(e){
     st.className='tx-status show error';
     st.textContent=e.reason||e.shortMessage||'Failed to post job';
     btn.disabled=false;
     _postStep=1;
   }
+}
+
+
+async function waitForTx(hash, statusEl, maxSecs=60){
+  const provider = signer.provider;
+  const start = Date.now();
+  while(Date.now()-start < maxSecs*1000){
+    try{
+      const r = await provider.getTransactionReceipt(hash);
+      if(r){
+        if(r.status===0) throw new Error('Transaction reverted');
+        return r;
+      }
+    }catch(e){ if(e.message.includes('reverted')) throw e; }
+    await new Promise(res=>setTimeout(res,2000));
+    const secs = Math.round((Date.now()-start)/1000);
+    if(statusEl) statusEl.textContent = 'Confirming... ('+secs+'s)';
+  }
+  throw new Error('Timeout - check ArcScan: https://testnet.arcscan.app/tx/'+hash);
 }
 
 window.addEventListener('load',()=>{ if(typeof applyTranslations==='function')applyTranslations();tryAutoConnect();updatePreview();});
