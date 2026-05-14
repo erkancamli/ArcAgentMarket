@@ -240,7 +240,7 @@ async function postJob(){
   const btn=document.getElementById('postBtn');
   btn.disabled=true;
   const rewardWei=BigInt(Math.floor(reward*1e6));
-  const GP=ethers.parseUnits('2','gwei');
+  const GP=ethers.parseUnits('10','gwei');
 
   try{
     const usdc=new ethers.Contract(USDC_ADDR,USDC_ABI,signer);
