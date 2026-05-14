@@ -248,8 +248,7 @@ async function registerAgent(){
       btn.disabled=true;
       st.className='tx-status show pending';
       st.textContent='Step 1/2: Approve USDC stake in your wallet...';
-      const feeData0=await signer.provider.getFeeData();
-      const gp0=feeData0.gasPrice||ethers.parseUnits('1','gwei');
+      const gp0=ethers.parseUnits('2','gwei');
       const appTx=await usdc.approve(REGISTRY_ADDR,stakeWei,{gasPrice:gp0,gasLimit:100000n});
       st.textContent='Approval sent ('+appTx.hash.slice(0,10)+'...). Waiting...';
       let al=0n;
@@ -286,8 +285,7 @@ async function doRegister(){
     st.className='tx-status show pending';
     st.textContent='Step 2/2: Confirm registration in your wallet...';
     const reg=new ethers.Contract(REGISTRY_ADDR,['function register(string,string,string[],uint256) external'],signer);
-    const feeData=await signer.provider.getFeeData();
-    const gasPrice=feeData.gasPrice||ethers.parseUnits('1','gwei');
+    const gasPrice=ethers.parseUnits('2','gwei');
     const tx=await reg.register(name,metaURI||'',skills,stakeWei,{gasPrice,gasLimit:500000n});
     const txUrl='https://testnet.arcscan.app/tx/'+tx.hash;
     st.className='tx-status show pending';
