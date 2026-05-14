@@ -249,7 +249,7 @@ async function postJob(){
     const allowance=await usdc.allowance(wallet,JOBMARKET_ADDR);
     if(allowance<rewardWei){
       setStatus('pending','Approve USDC in your wallet...');
-      const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei,{gasPrice:GP,gasLimit:100000n});
+      const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei,{gasPrice:GP,gasLimit:100000n,type:0});
       setStatus('pending','Approval sent — <a href="https://testnet.arcscan.app/tx/'+appTx.hash+'" target="_blank" style="color:var(--accent)">view TX ↗</a><br>Waiting...');
       // Poll allowance
       for(let i=0;i<30;i++){
@@ -262,7 +262,7 @@ async function postJob(){
     // Step 2 — post job
     setStatus('pending','Confirm job posting in your wallet...');
     const jm=new ethers.Contract(JOBMARKET_ADDR,JM_ABI,signer);
-    const tx=await jm.postJob(title,desc,category,rewardWei,BigInt(deadline),{gasPrice:GP,gasLimit:500000n});
+    const tx=await jm.postJob(title,desc,category,rewardWei,BigInt(deadline),{gasPrice:GP,gasLimit:500000n,type:0});
 
     setStatus('pending','TX sent — <a href="https://testnet.arcscan.app/tx/'+tx.hash+'" target="_blank" style="color:var(--accent)">view on ArcScan ↗</a><br>Confirming...');
 
