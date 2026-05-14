@@ -77,6 +77,12 @@ textarea.input{resize:vertical;min-height:80px;font-family:'Syne',sans-serif;fon
 </style>
 </head>
 <body>
+<script>
+(function(){
+  var th=localStorage.getItem('arcTheme')||'light';
+  document.documentElement.setAttribute('data-theme',th);
+})();
+</script>
 <div class="toast" id="toast"></div>
 <header>
   <a href="index.html" class="logo">Arc<span>Agent</span>Market</a>
