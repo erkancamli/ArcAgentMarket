@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dashboard — ArcAgentMarket</title>
+<script src="i18n.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800;900&display=swap');
@@ -27,7 +28,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
 .wallet-wrap{position:relative}
 .wallet-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:8px;font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px}
 .wallet-btn.connected{border-color:var(--success);color:var(--success)}
-.wallet-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surf);border:1px solid var(--border);border-radius:10px;min-width:160px;overflow:hidden;z-index:200}
+.wallet-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;max-width:calc(100vw - 28px);background:var(--surf);border:1px solid var(--border);border-radius:10px;min-width:160px;overflow:hidden;z-index:200}
 .wallet-menu-addr{padding:10px 14px;font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);border-bottom:1px solid var(--border)}
 .wallet-menu-disc{width:100%;background:none;border:none;padding:10px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:11px;color:var(--danger);cursor:pointer}
 .wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:32px 24px}
@@ -54,6 +55,32 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
 .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;padding:13px 28px;border-radius:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;cursor:pointer}
 .toast{position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-6px);background:var(--text);color:var(--bg);padding:8px 18px;border-radius:8px;font-weight:700;font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:9998}
 .toast.show{opacity:1;transform:translateX(-50%)}
+
+  .lang-btn.active{background:var(--accent)!important;border-color:var(--accent)!important;color:#000!important;}
+  .lang-btn:hover:not(.active){border-color:var(--accent)!important;color:var(--accent)!important;}
+
+  /* ── RESPONSIVE ─────────────────────────────────────── */
+  @media(max-width:768px){
+    header{padding:10px 14px;gap:8px}
+    .nav a{padding:5px 7px;font-size:8px}
+    .logo{font-size:13px}
+    .wrap{padding:20px 14px}
+  }
+  @media(max-width:640px){
+    header{flex-wrap:wrap;gap:6px}
+    .nav{order:3;width:100%;border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
+    .hdr-right{margin-left:auto}
+    .wallet-btn{padding:6px 10px;font-size:10px}
+    .page-title{font-size:22px}
+  }
+  @media(max-width:768px){
+    div[style*="grid-template-columns:2fr 1fr"]{display:block!important}
+    div[style*="grid-template-columns:2fr 1fr"] > div:last-child{margin-top:16px}
+  }
+  @media(max-width:640px){
+    .stat-grid{grid-template-columns:repeat(2,1fr)}
+    .job-row{flex-direction:column;align-items:flex-start;gap:6px}
+  }
 </style>
 </head>
 <body>
@@ -68,7 +95,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
     <a href="register.html">📋<span>Register</span></a>
     <a href="dashboard.html" class="active">📊<span>Dashboard</span></a>
   </nav>
-  <button id="themeBtn" onclick="toggleTheme()" style="background:transparent;border:1px solid var(--border);color:var(--muted);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;flex-shrink:0">🌙</button>
+  <div style="display:flex;gap:4px;align-items:center">
+    <button class="lang-btn" data-lang="en" onclick="setLang('en')" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:6px;font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;font-weight:700">EN</button>
+    <button class="lang-btn" data-lang="tr" onclick="setLang('tr')" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:6px;font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;font-weight:700">TR</button>
+  </div>
+    <button id="themeBtn" onclick="toggleTheme()" style="background:transparent;border:1px solid var(--border);color:var(--muted);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;flex-shrink:0">🌙</button>
     <div class="wallet-wrap">
     <button class="wallet-btn" id="walletBtn" onclick="toggleWalletMenu()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10h20"/></svg>
@@ -258,7 +289,7 @@ async function loadDashboard(){
   }
 }
 
-window.addEventListener('load',()=>{tryAutoConnect();});
+window.addEventListener('load',()=>{ if(typeof applyTranslations==='function')applyTranslations();tryAutoConnect();});
 </script>
 </body>
 </html>
