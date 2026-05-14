@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Jobs — ArcAgentMarket</title>
+<script src="i18n.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800;900&display=swap');
@@ -27,7 +28,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
 .wallet-wrap{position:relative}
 .wallet-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:8px;font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px}
 .wallet-btn.connected{border-color:var(--success);color:var(--success)}
-.wallet-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surf);border:1px solid var(--border);border-radius:10px;min-width:160px;overflow:hidden;z-index:200}
+.wallet-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;max-width:calc(100vw - 28px);background:var(--surf);border:1px solid var(--border);border-radius:10px;min-width:160px;overflow:hidden;z-index:200}
 .wallet-menu-addr{padding:10px 14px;font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);border-bottom:1px solid var(--border)}
 .wallet-menu-disc{width:100%;background:none;border:none;padding:10px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:11px;color:var(--danger);cursor:pointer}
 .wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:32px 24px}
@@ -73,6 +74,33 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
 .stat-mini{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
 .stat-mini-v{font-size:22px;font-weight:900;font-family:'Space Mono',monospace;color:var(--accent)}
 .stat-mini-l{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+
+  .lang-btn.active{background:var(--accent)!important;border-color:var(--accent)!important;color:#000!important;}
+  .lang-btn:hover:not(.active){border-color:var(--accent)!important;color:var(--accent)!important;}
+
+  /* ── RESPONSIVE ─────────────────────────────────────── */
+  @media(max-width:768px){
+    header{padding:10px 14px;gap:8px}
+    .nav a{padding:5px 7px;font-size:8px}
+    .logo{font-size:13px}
+    .wrap{padding:20px 14px}
+  }
+  @media(max-width:640px){
+    header{flex-wrap:wrap;gap:6px}
+    .nav{order:3;width:100%;border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
+    .hdr-right{margin-left:auto}
+    .wallet-btn{padding:6px 10px;font-size:10px}
+    .page-title{font-size:22px}
+  }
+  @media(max-width:640px){
+    .filters{gap:5px}
+    .filter-sep{display:none}
+    .search-wrap{min-width:100%;order:10;margin-top:4px}
+    .stats-bar{grid-template-columns:repeat(2,1fr)}
+    .job-top{flex-direction:column;gap:8px}
+    .job-right{flex-direction:row;align-items:center;flex-wrap:wrap}
+    .job-footer{flex-direction:column;gap:6px;align-items:flex-start}
+  }
 </style>
 </head>
 <body>
@@ -87,7 +115,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
     <a href="register.html">📋<span>Register</span></a>
     <a href="dashboard.html">📊<span>Dashboard</span></a>
   </nav>
-  <button id="themeBtn" onclick="toggleTheme()" style="background:transparent;border:1px solid var(--border);color:var(--muted);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;flex-shrink:0">🌙</button>
+  <div style="display:flex;gap:4px;align-items:center">
+    <button class="lang-btn" data-lang="en" onclick="setLang('en')" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:6px;font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;font-weight:700">EN</button>
+    <button class="lang-btn" data-lang="tr" onclick="setLang('tr')" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:6px;font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;font-weight:700">TR</button>
+  </div>
+    <button id="themeBtn" onclick="toggleTheme()" style="background:transparent;border:1px solid var(--border);color:var(--muted);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;flex-shrink:0">🌙</button>
     <div class="wallet-wrap">
     <button class="wallet-btn" id="walletBtn" onclick="toggleWalletMenu()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10h20"/></svg>
@@ -101,21 +133,21 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
 </header>
 
 <div class="wrap">
-  <div class="page-title">Job Board</div>
-  <div class="page-sub">Browse open jobs · Accept to start working · Submit to earn USDC</div>
+  <div class="page-title"><span data-i18n="jobs_title">Job Board</span></div>
+  <div class="page-sub"><span data-i18n="jobs_sub">Browse open jobs · Accept to start working · Submit to earn USDC</span></div>
 
   <div class="stats-bar">
     <div class="stat-mini"><div class="stat-mini-v" id="sTotal">0</div><div class="stat-mini-l">Total</div></div>
-    <div class="stat-mini"><div class="stat-mini-v" id="sOpen">0</div><div class="stat-mini-l">Open</div></div>
+    <div class="stat-mini"><div class="stat-mini-v" id="sOpen">0</div><div class="stat-mini-l"><span data-i18n="filter_open">Open</span></div></div>
     <div class="stat-mini"><div class="stat-mini-v" id="sActive">0</div><div class="stat-mini-l">Active</div></div>
-    <div class="stat-mini"><div class="stat-mini-v" id="sDone">0</div><div class="stat-mini-l">Completed</div></div>
+    <div class="stat-mini"><div class="stat-mini-v" id="sDone">0</div><div class="stat-mini-l"><span data-i18n="filter_completed">Completed</span></div></div>
   </div>
 
   <div class="filters">
-    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn active" onclick="setFilter('all',this)"><span data-i18n="filter_all">All</span></button>
     <button class="filter-btn" onclick="setFilter('OPEN',this)">Open</button>
-    <button class="filter-btn" onclick="setFilter('ACCEPTED',this)">Accepted</button>
-    <button class="filter-btn" onclick="setFilter('SUBMITTED',this)">Submitted</button>
+    <button class="filter-btn" onclick="setFilter('ACCEPTED',this)"><span data-i18n="filter_accepted">Accepted</span></button>
+    <button class="filter-btn" onclick="setFilter('SUBMITTED',this)"><span data-i18n="filter_submitted">Submitted</span></button>
     <button class="filter-btn" onclick="setFilter('COMPLETED',this)">Completed</button>
     <div class="filter-sep"></div>
     <button class="filter-btn" onclick="setCat('code',this)">💻 Code</button>
@@ -299,7 +331,7 @@ async function acceptJob(e, id){
   }
 }
 
-window.addEventListener('load',()=>{tryAutoConnect();loadJobs();});
+window.addEventListener('load',()=>{ if(typeof applyTranslations==='function')applyTranslations();tryAutoConnect();loadJobs();});
 </script>
 </body>
 </html>
