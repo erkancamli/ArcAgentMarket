@@ -248,7 +248,9 @@ async function registerAgent(){
       btn.disabled=true;
       st.className='tx-status show pending';
       st.textContent='Step 1/2: Approve USDC stake in your wallet...';
-      const appTx=await usdc.approve(REGISTRY_ADDR,stakeWei);
+      const feeData0=await signer.provider.getFeeData();
+      const gp0=feeData0.gasPrice||ethers.parseUnits('1','gwei');
+      const appTx=await usdc.approve(REGISTRY_ADDR,stakeWei,{gasPrice:gp0,gasLimit:100000n});
       st.textContent='Approval sent ('+appTx.hash.slice(0,10)+'...). Waiting...';
       let al=0n;
       for(let i=0;i<20;i++){
@@ -284,23 +286,58 @@ async function doRegister(){
     st.className='tx-status show pending';
     st.textContent='Step 2/2: Confirm registration in your wallet...';
     const reg=new ethers.Contract(REGISTRY_ADDR,['function register(string,string,string[],uint256) external'],signer);
-    const tx=await reg.register(name,metaURI||'',skills,stakeWei);
-    st.textContent='TX sent: '+tx.hash.slice(0,12)+'... waiting for confirmation';
-    const receipt=await Promise.race([
-      tx.wait(),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),90000))
-    ]);
-    if(receipt&&receipt.status===0)throw new Error('Transaction reverted');
-    st.className='tx-status show success';
-    st.textContent='Agent registered! Welcome to ArcAgentMarket.';
+    const feeData=await signer.provider.getFeeData();
+    const gasPrice=feeData.gasPrice||ethers.parseUnits('1','gwei');
+    const tx=await reg.register(name,metaURI||'',skills,stakeWei,{gasPrice,gasLimit:500000n});
+    const txUrl='https://testnet.arcscan.app/tx/'+tx.hash;
+    st.className='tx-status show pending';
+    st.innerHTML='TX sent! <a href="'+txUrl+'" target="_blank" style="color:var(--accent)">View on ArcScan ↗</a><br><span style="font-size:10px">Waiting for confirmation...</span>';
     _regStep=0;
-    setTimeout(()=>window.location='dashboard.html',2000);
+    (async()=>{
+      for(let i=0;i<30;i++){
+        await new Promise(r=>setTimeout(r,3000));
+        try{
+          const r=await signer.provider.getTransactionReceipt(tx.hash);
+          if(r&&r.status===1){
+            st.className='tx-status show success';
+            st.innerHTML='Agent registered! <a href="'+txUrl+'" target="_blank" style="color:var(--success)">View TX ↗</a>';
+            setTimeout(()=>window.location='dashboard.html',1500);
+            return;
+          }
+          if(r&&r.status===0){
+            st.className='tx-status show error';
+            st.innerHTML='Transaction failed. <a href="'+txUrl+'" target="_blank" style="color:var(--danger)">View TX ↗</a>';
+            btn.disabled=false;
+            return;
+          }
+        }catch(e){}
+      }
+    })();
   }catch(e){
     st.className='tx-status show error';
     st.textContent=e.reason||e.shortMessage||'Registration failed';
     btn.disabled=false;
     _regStep=1;
   }
+}
+
+
+async function waitForTx(hash, statusEl, maxSecs=60){
+  const provider = signer.provider;
+  const start = Date.now();
+  while(Date.now()-start < maxSecs*1000){
+    try{
+      const r = await provider.getTransactionReceipt(hash);
+      if(r){
+        if(r.status===0) throw new Error('Transaction reverted');
+        return r;
+      }
+    }catch(e){ if(e.message.includes('reverted')) throw e; }
+    await new Promise(res=>setTimeout(res,2000));
+    const secs = Math.round((Date.now()-start)/1000);
+    if(statusEl) statusEl.textContent = 'Confirming... ('+secs+'s)';
+  }
+  throw new Error('Timeout - check ArcScan: https://testnet.arcscan.app/tx/'+hash);
 }
 
 window.addEventListener('load',()=>{ if(typeof applyTranslations==='function')applyTranslations();tryAutoConnect();});
