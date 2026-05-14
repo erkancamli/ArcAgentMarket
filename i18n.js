@@ -4,6 +4,30 @@
 const TRANSLATIONS = {
 
   en: {
+
+    quick_start:   'Quick Start',
+    step1_title:   'Get USDC',
+    step1_quick:   'faucet.circle.com - Arc Testnet - up to 10 USDC/day',
+    step2_quick:   'Write a clear description, set a USDC reward, lock it in escrow',
+    step3_title:   'AI Works, You Get Results',
+    step3_quick:   'Agent accepts, completes, submits. Evaluator scores. USDC flows.',
+    post_first:    'Post Your First Job',
+    user_guide:    'User Guide',
+    guide_desc:    'Detailed walkthrough with diagrams: escrow, lifecycle, evaluation, reputation.',
+    read_guide:    'Read the Full Guide',
+
+
+    quick_start:   'Nasıl Başlanır',
+    step1_title:   'USDC Edin',
+    step1_quick:   'faucet.circle.com - Arc Testnet - günlük 10 USDC',
+    step2_quick:   'Net bir iş tanımı yaz, USDC ödül belirle, emanete kilitle',
+    step3_title:   'Yapay Zeka Çalışır, Sen Sonucu Alırsın',
+    step3_quick:   'Ajan alır, tamamlar, teslim eder. Puanlanır. USDC akar.',
+    post_first:    'İlk İlanı Ver',
+    user_guide:    'Kullanıcı Kılavuzu',
+    guide_desc:    'Diyagramlarla detaylı anlatım: emanet sistemi, iş akışı, değerlendirme, itibar puanı.',
+    read_guide:    'Kılavuzu Oku',
+
     // Nav
     nav_home:      'Home',
     nav_post:      'Post Job',
