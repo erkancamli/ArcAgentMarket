@@ -214,9 +214,13 @@ async function checkRegistered(){
   }catch(e){}
 }
 
+let _regStep=0;
+let _regParams=null;
+
 async function registerAgent(){
   if(!wallet){const ok=await connectWallet();if(!ok)return;}
   if(!REGISTRY_ADDR){showToast('Contracts not deployed yet');return;}
+
   const name=document.getElementById('agentName').value.trim();
   const desc=document.getElementById('agentDesc').value.trim();
   const metaURI=document.getElementById('metadataURI').value.trim();
@@ -227,31 +231,67 @@ async function registerAgent(){
 
   const btn=document.getElementById('registerBtn');
   const st=document.getElementById('txStatus');
-  btn.disabled=true;
   const stakeWei=BigInt(Math.floor(stake*1e6));
   const skills=Array.from(selectedSkills);
+  _regParams={name,metaURI,skills,stakeWei};
 
-  try{
-    const usdc=new ethers.Contract(USDC_ADDR,USDC_ABI,signer);
-    st.className='tx-status show pending';st.textContent='Approving USDC stake…';
-    const allowance=await usdc.allowance(wallet,REGISTRY_ADDR);
-    if(allowance<stakeWei){
+  // Step 1: Approve
+  if(_regStep===0){
+    try{
+      const usdc=new ethers.Contract(USDC_ADDR,USDC_ABI,signer);
+      const allowance=await usdc.allowance(wallet,REGISTRY_ADDR);
+      if(allowance>=stakeWei){
+        _regStep=1;
+        await doRegister();
+        return;
+      }
+      btn.disabled=true;
+      st.className='tx-status show pending';
+      st.textContent='Step 1/2: Approve USDC stake in your wallet...';
       const appTx=await usdc.approve(REGISTRY_ADDR,stakeWei);
-      st.textContent='Confirming approval…';
+      st.textContent='Approval sent ('+appTx.hash.slice(0,10)+'...). Waiting...';
       await appTx.wait();
+      st.className='tx-status show success';
+      st.textContent='Approved! Click "Register Agent" again to complete.';
+      _regStep=1;
+      btn.disabled=false;
+      btn.querySelector('span').textContent='Step 2: Register Agent';
+    }catch(e){
+      st.className='tx-status show error';
+      st.textContent=e.reason||e.shortMessage||'Approval failed';
+      btn.disabled=false;
+      _regStep=0;
     }
-    st.textContent='Registering agent onchain…';
+    return;
+  }
+
+  // Step 2: Register
+  if(_regStep===1){
+    await doRegister();
+  }
+}
+
+async function doRegister(){
+  const btn=document.getElementById('registerBtn');
+  const st=document.getElementById('txStatus');
+  const {name,metaURI,skills,stakeWei}=_regParams;
+  try{
+    btn.disabled=true;
+    st.className='tx-status show pending';
+    st.textContent='Step 2/2: Confirm registration in your wallet...';
     const reg=new ethers.Contract(REGISTRY_ADDR,['function register(string,string,string[],uint256) external'],signer);
     const tx=await reg.register(name,metaURI||'',skills,stakeWei);
-    st.textContent='Confirming…';
+    st.textContent='Transaction sent ('+tx.hash.slice(0,10)+'...). Confirming...';
     await tx.wait();
     st.className='tx-status show success';
     st.textContent='Agent registered! Welcome to ArcAgentMarket.';
+    _regStep=0;
     setTimeout(()=>window.location='dashboard.html',2000);
   }catch(e){
     st.className='tx-status show error';
-    st.textContent=e.reason||e.shortMessage||'Transaction failed';
+    st.textContent=e.reason||e.shortMessage||'Registration failed';
     btn.disabled=false;
+    _regStep=1;
   }
 }
 
