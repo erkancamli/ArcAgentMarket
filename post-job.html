@@ -219,16 +219,36 @@ async function postJob(){
     const allowance=await usdc.allowance(wallet,JOBMARKET_ADDR);
     if(allowance<rewardWei){
       const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei);
-      st.textContent='Confirming approval…';
-      await appTx.wait({timeout:60000});
+      st.textContent='Approval sent, waiting...';
+      // Poll for approval confirmation instead of blocking wait()
+      let approved=false;
+      for(let i=0;i<30;i++){
+        await new Promise(r=>setTimeout(r,3000));
+        try{
+          const al=await usdc.allowance(wallet,JOBMARKET_ADDR);
+          if(al>=rewardWei){approved=true;break;}
+        }catch(e){}
+      }
+      if(!approved){st.className='tx-status show error';st.textContent='Approval timeout. Refresh and try again.';btn.disabled=false;return;}
     }
-    st.textContent='Posting job…';
+    st.textContent='Posting job...';
     const jm=new ethers.Contract(JOBMARKET_ADDR,['function postJob(string,string,string,uint256,uint256) external returns (uint256)'],signer);
     const tx=await jm.postJob(title,desc,category,rewardWei,deadline);
-    st.textContent='Confirming tx…';
-    await tx.wait({timeout:60000});
+    st.textContent='Transaction sent! Waiting for confirmation...';
+    // Non-blocking: poll for receipt
+    const txHash=tx.hash;
+    let confirmed=false;
+    for(let i=0;i<40;i++){
+      await new Promise(r=>setTimeout(r,3000));
+      try{
+        const receipt=await signer.provider.getTransactionReceipt(txHash);
+        if(receipt&&receipt.status===1){confirmed=true;break;}
+        if(receipt&&receipt.status===0){throw new Error('Transaction reverted');}
+      }catch(e){if(e.message.includes('reverted'))throw e;}
+    }
+    if(!confirmed){st.className='tx-status show error';st.textContent='Confirmation timeout. Check jobs page.';btn.disabled=false;return;}
     st.className='tx-status show success';
-    st.textContent='✓ Job posted!';
+    st.textContent='Job posted successfully!';
     setTimeout(()=>window.location='jobs.html',2000);
   }catch(e){
     st.className='tx-status show error';
