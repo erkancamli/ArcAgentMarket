@@ -249,7 +249,7 @@ async function registerAgent(){
       st.className='tx-status show pending';
       st.textContent='Step 1/2: Approve USDC stake in your wallet...';
       const gp0=ethers.parseUnits('2','gwei');
-      const appTx=await usdc.approve(REGISTRY_ADDR,stakeWei,{gasPrice:gp0,gasLimit:100000n});
+      const appTx=await usdc.approve(REGISTRY_ADDR,stakeWei,{gasPrice:gp0,gasLimit:100000n,type:0});
       st.textContent='Approval sent ('+appTx.hash.slice(0,10)+'...). Waiting...';
       let al=0n;
       for(let i=0;i<20;i++){
