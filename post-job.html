@@ -201,9 +201,14 @@ function updatePreview(){
   document.getElementById('prevTotal').textContent=reward.toFixed(2)+' USDC';
 }
 
+// Step tracker: 0=idle, 1=approved, 2=posted
+let _postStep=0;
+let _postParams=null;
+
 async function postJob(){
   if(!wallet){const ok=await connectWallet();if(!ok)return;}
   if(!JOBMARKET_ADDR){showToast('Contracts not deployed yet');return;}
+
   const title=document.getElementById('title').value.trim();
   const desc=document.getElementById('desc').value.trim();
   const category=document.getElementById('category').value;
@@ -216,50 +221,65 @@ async function postJob(){
 
   const btn=document.getElementById('postBtn');
   const st=document.getElementById('txStatus');
-  btn.disabled=true;
   const rewardWei=BigInt(Math.floor(reward*1e6));
+  _postParams={title,desc,category,rewardWei,deadline};
 
-  try{
-    const usdc=new ethers.Contract(USDC_ADDR,USDC_ABI,signer);
-    st.className='tx-status show pending';st.textContent='Approving USDC…';
-    const allowance=await usdc.allowance(wallet,JOBMARKET_ADDR);
-    if(allowance<rewardWei){
-      const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei);
-      st.textContent='Approval sent, waiting...';
-      // Poll for approval confirmation instead of blocking wait()
-      let approved=false;
-      for(let i=0;i<30;i++){
-        await new Promise(r=>setTimeout(r,3000));
-        try{
-          const al=await usdc.allowance(wallet,JOBMARKET_ADDR);
-          if(al>=rewardWei){approved=true;break;}
-        }catch(e){}
+  // Step 1: Check allowance and approve if needed
+  if(_postStep===0){
+    try{
+      const usdc=new ethers.Contract(USDC_ADDR,USDC_ABI,signer);
+      const allowance=await usdc.allowance(wallet,JOBMARKET_ADDR);
+      if(allowance>=rewardWei){
+        // Already approved, go straight to step 2
+        _postStep=1;
+        await doPostJob();
+        return;
       }
-      if(!approved){st.className='tx-status show error';st.textContent='Approval timeout. Refresh and try again.';btn.disabled=false;return;}
+      btn.disabled=true;
+      st.className='tx-status show pending';st.textContent='Step 1/2: Approve USDC in your wallet...';
+      const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei);
+      st.textContent='Approval sent ('+appTx.hash.slice(0,10)+'...). Waiting for confirmation...';
+      await appTx.wait();
+      st.className='tx-status show success';
+      st.textContent='Approval confirmed! Click "Post Job" again to publish.';
+      _postStep=1;
+      btn.disabled=false;
+      btn.querySelector('span').textContent='Step 2: Post Job';
+    }catch(e){
+      st.className='tx-status show error';
+      st.textContent=e.reason||e.shortMessage||'Approval failed';
+      btn.disabled=false;
+      _postStep=0;
     }
-    st.textContent='Posting job...';
+    return;
+  }
+
+  // Step 2: Post the job
+  if(_postStep===1){
+    await doPostJob();
+  }
+}
+
+async function doPostJob(){
+  const btn=document.getElementById('postBtn');
+  const st=document.getElementById('txStatus');
+  const {title,desc,category,rewardWei,deadline}=_postParams;
+  try{
+    btn.disabled=true;
+    st.className='tx-status show pending';st.textContent='Step 2/2: Confirm job posting in your wallet...';
     const jm=new ethers.Contract(JOBMARKET_ADDR,['function postJob(string,string,string,uint256,uint256) external returns (uint256)'],signer);
     const tx=await jm.postJob(title,desc,category,rewardWei,deadline);
-    st.textContent='Transaction sent! Waiting for confirmation...';
-    // Non-blocking: poll for receipt
-    const txHash=tx.hash;
-    let confirmed=false;
-    for(let i=0;i<40;i++){
-      await new Promise(r=>setTimeout(r,3000));
-      try{
-        const receipt=await signer.provider.getTransactionReceipt(txHash);
-        if(receipt&&receipt.status===1){confirmed=true;break;}
-        if(receipt&&receipt.status===0){throw new Error('Transaction reverted');}
-      }catch(e){if(e.message.includes('reverted'))throw e;}
-    }
-    if(!confirmed){st.className='tx-status show error';st.textContent='Confirmation timeout. Check jobs page.';btn.disabled=false;return;}
+    st.textContent='Transaction sent ('+tx.hash.slice(0,10)+'...). Confirming...';
+    await tx.wait();
     st.className='tx-status show success';
     st.textContent='Job posted successfully!';
+    _postStep=0;
     setTimeout(()=>window.location='jobs.html',2000);
   }catch(e){
     st.className='tx-status show error';
-    st.textContent=e.reason||e.shortMessage||'Transaction failed';
+    st.textContent=e.reason||e.shortMessage||'Failed to post job';
     btn.disabled=false;
+    _postStep=1;
   }
 }
 
