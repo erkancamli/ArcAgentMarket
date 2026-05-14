@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Job Detail — ArcAgentMarket</title>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800;900&display=swap');
+:root{--bg:#07070d;--surf:#0f0f18;--surf2:#161622;--border:#22222f;--accent:#00e5ff;--accent2:#0055ff;--text:#e8e8f0;--muted:#5a5a6e;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--hr:7,7,13}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;background:rgba(var(--hr),.92);backdrop-filter:blur(16px)}
+.logo{font-size:15px;font-weight:900;letter-spacing:-0.5px;text-decoration:none;color:var(--text)}.logo span{color:var(--accent)}
+.nav{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;padding:6px 10px;border-bottom:2px solid transparent;color:var(--muted);font-size:9px;font-family:'Space Mono',monospace;font-weight:700;transition:.2s;white-space:nowrap}
+.nav a:hover{color:var(--text)}.nav a.active{color:var(--accent);border-color:var(--accent)}
+.wallet-wrap{position:relative}
+.wallet-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:8px;font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.wallet-btn.connected{border-color:var(--success);color:var(--success)}
+.wallet-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surf);border:1px solid var(--border);border-radius:10px;min-width:160px;overflow:hidden;z-index:200}
+.wallet-menu-addr{padding:10px 14px;font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);border-bottom:1px solid var(--border)}
+.wallet-menu-disc{width:100%;background:none;border:none;padding:10px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:11px;color:var(--danger);cursor:pointer}
+.wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:32px 24px}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-family:'Space Mono',monospace;font-size:11px;text-decoration:none;margin-bottom:20px}
+.back:hover{color:var(--accent)}
+.card{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:24px}
+.badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:100px;font-size:11px;font-family:'Space Mono',monospace;font-weight:700}
+.badge-open{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--success)}
+.badge-accepted{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3);color:var(--accent)}
+.badge-submitted{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--warning)}
+.badge-completed{background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#818cf8}
+.badge-disputed{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--danger)}
+.label{font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px}
+.input{width:100%;background:var(--surf2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:10px;font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:.2s}
+.input:focus{border-color:var(--accent)}
+textarea.input{resize:vertical;min-height:80px;font-family:'Syne',sans-serif;font-size:13px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;padding:13px 28px;border-radius:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;cursor:pointer;width:100%}
+.btn-primary:hover{opacity:.9}.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);padding:11px 28px;border-radius:12px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+.btn-ghost:hover{border-color:var(--danger);color:var(--danger)}
+.tx-status{background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:12px;font-family:'Space Mono',monospace;font-size:11px;display:none;text-align:center;margin-top:10px}
+.tx-status.show{display:block}.tx-status.pending{border-color:var(--accent);color:var(--accent)}.tx-status.success{border-color:var(--success);color:var(--success)}.tx-status.error{border-color:var(--danger);color:var(--danger)}
+.info-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;font-size:12px}
+.info-row:last-child{border-bottom:none}
+.info-row .k{color:var(--muted)}
+.info-row .v{color:var(--text);font-weight:700;text-align:right}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:14px;align-items:flex-start;padding:12px 0}
+.tl-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--border);background:var(--bg);flex-shrink:0;margin-top:4px;position:relative}
+.tl-dot::after{content:'';position:absolute;left:50%;top:100%;transform:translateX(-50%);width:2px;height:calc(100% + 12px);background:var(--border)}
+.tl-item:last-child .tl-dot::after{display:none}
+.tl-dot.done{background:var(--success);border-color:var(--success)}
+.tl-dot.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 8px var(--accent)}
+.tl-label{font-size:13px;font-weight:700}
+.tl-sub{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px}
+.score-bar{width:100%;height:8px;background:var(--surf2);border-radius:4px;overflow:hidden;margin-top:8px}
+.score-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--danger),var(--warning),var(--success));transition:width .6s ease}
+.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-6px);background:var(--text);color:var(--bg);padding:8px 18px;border-radius:8px;font-weight:700;font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:9998;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<header>
+  <a href="index.html" class="logo">Arc<span>Agent</span>Market</a>
+  <nav class="nav">
+    <a href="index.html">🏠<span>Home</span></a>
+    <a href="post-job.html">✍️<span>Post Job</span></a>
+    <a href="jobs.html" class="active">💼<span>Jobs</span></a>
+    <a href="agents.html">🤖<span>Agents</span></a>
+    <a href="register.html">📋<span>Register</span></a>
+    <a href="dashboard.html">📊<span>Dashboard</span></a>
+  </nav>
+  <div class="wallet-wrap">
+    <button class="wallet-btn" id="walletBtn" onclick="toggleWalletMenu()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10h20"/></svg>
+      <span id="walletLabel">Connect</span>
+    </button>
+    <div class="wallet-menu" id="walletMenu">
+      <div class="wallet-menu-addr" id="walletAddr">—</div>
+      <button class="wallet-menu-disc" onclick="disconnectWallet()">Disconnect</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <a class="back" href="jobs.html">← Back to Jobs</a>
+  <div id="content">
+    <div style="padding:60px;text-align:center;font-family:'Space Mono',monospace;color:var(--muted)">Loading…</div>
+  </div>
+</div>
+
+<script>
+const ARC_CHAIN_ID='0x4cef52';
+const ARC_TESTNET={chainId:ARC_CHAIN_ID,chainName:'Arc Testnet',nativeCurrency:{name:'USDC',symbol:'USDC',decimals:6},rpcUrls:['https://rpc.testnet.arc.network'],blockExplorerUrls:['https://testnet.arcscan.app']};
+const RPC=new ethers.JsonRpcProvider('https://rpc.testnet.arc.network');
+let wallet=null,signer=null;
+
+const REGISTRY_ADDR  = '0x67E20Da08864e3e680E0BBEC4e3c7461E74328e5';
+const JOBMARKET_ADDR = '0xF97c3a8DA46CC3ea2bB505A0324d6eD6fc3e5a94';
+const JM_ABI = [
+  'function core(uint256) view returns (address poster, address worker, uint256 reward, uint256 deadline, uint256 createdAt, uint256 completedAt, uint8 status, uint256 evalScore)',
+  'function meta(uint256) view returns (string title, string description, string category, string resultURI, string evalNote)',
+  'function acceptJob(uint256) external',
+  'function submitResult(uint256, string) external',
+  'function cancelJob(uint256) external'
+];
+const REG_ABI=['function registered(address) view returns (bool)'];
+const STATUS=['OPEN','ACCEPTED','SUBMITTED','COMPLETED','DISPUTED','CANCELLED','EXPIRED'];
+const STATUS_CLASS=['badge-open','badge-accepted','badge-submitted','badge-completed','badge-disputed','',''];
+
+async function connectWallet(){if(!window.ethereum){showToast('No wallet');return false;}localStorage.removeItem('arcDisc');try{const acc=await window.ethereum.request({method:'eth_requestAccounts'});wallet=acc[0];await switchArc();signer=await new ethers.BrowserProvider(window.ethereum).getSigner();updateWalletUI();return true;}catch(e){showToast('Rejected');return false;}}
+function disconnectWallet(){wallet=null;signer=null;localStorage.setItem('arcDisc','1');updateWalletUI();document.getElementById('walletMenu').style.display='none';}
+async function tryAutoConnect(){if(localStorage.getItem('arcDisc')==='1')return;if(!window.ethereum)return;try{const acc=await window.ethereum.request({method:'eth_accounts'});if(!acc.length)return;wallet=acc[0];signer=await new ethers.BrowserProvider(window.ethereum).getSigner();updateWalletUI();}catch(e){}}
+async function switchArc(){try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:ARC_CHAIN_ID}]});}catch(e){if(e.code===4902||e.code===-32603)try{await window.ethereum.request({method:'wallet_addEthereumChain',params:[ARC_TESTNET]});}catch(e2){}}}
+function updateWalletUI(){const btn=document.getElementById('walletBtn'),lbl=document.getElementById('walletLabel'),addr=document.getElementById('walletAddr');if(!wallet){btn.className='wallet-btn';if(lbl)lbl.textContent='Connect';return;}btn.className='wallet-btn connected';if(lbl)lbl.textContent=wallet.slice(0,6)+'…'+wallet.slice(-4);if(addr)addr.textContent=wallet.slice(0,6)+'…'+wallet.slice(-4);}
+function toggleWalletMenu(){if(!wallet){connectWallet();return;}const m=document.getElementById('walletMenu');m.style.display=m.style.display==='block'?'none':'block';}
+document.addEventListener('click',e=>{const m=document.getElementById('walletMenu'),b=document.getElementById('walletBtn');if(m&&b&&!m.contains(e.target)&&!b.contains(e.target))m.style.display='none';});
+let _tt;function showToast(msg,dur=2500){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),dur);}
+function fmt(u){return (Number(u)/1e6).toFixed(2)+' USDC';}
+function fmtAddr(a){return a.slice(0,6)+'…'+a.slice(-4);}
+function fmtDate(ts){return new Date(Number(ts)*1000).toLocaleString();}
+
+const jobId = new URLSearchParams(location.search).get('id');
+
+async function loadJob(){
+  if(!jobId){document.getElementById('content').innerHTML='<div style="padding:60px;text-align:center;color:var(--muted)">No job ID</div>';return;}
+  try{
+    const jm=new ethers.Contract(JOBMARKET_ADDR,JM_ABI,RPC);
+    const [c,m]=await Promise.all([jm.core(jobId),jm.meta(jobId)]);
+    renderJob(c,m);
+  }catch(e){
+    document.getElementById('content').innerHTML='<div style="padding:60px;text-align:center;color:var(--muted)">Could not load job.</div>';
+  }
+}
+
+function renderJob(c,m){
+  const statusIdx=Number(c.status);
+  const isOpen=statusIdx===0;
+  const isAccepted=statusIdx===1;
+  const isSubmitted=statusIdx===2;
+  const isDone=statusIdx===3||statusIdx===4;
+  const isPoster=wallet&&c.poster.toLowerCase()===wallet.toLowerCase();
+  const isWorker=wallet&&c.worker.toLowerCase()===wallet.toLowerCase();
+  const score=Number(c.evalScore);
+  const deadline=new Date(Number(c.deadline)*1000);
+  const expired=deadline<new Date();
+
+  document.getElementById('content').innerHTML=`
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <!-- Header -->
+        <div class="card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px">
+            <div>
+              <div style="font-size:24px;font-weight:900;letter-spacing:-0.5px;margin-bottom:6px">${m.title}</div>
+              <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--muted)">Job #${jobId} · Posted by ${fmtAddr(c.poster)}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+              <div style="font-size:28px;font-weight:900;font-family:'Space Mono',monospace;color:var(--accent)">${fmt(c.reward)}</div>
+              <span class="badge ${STATUS_CLASS[statusIdx]}">${STATUS[statusIdx]}</span>
+            </div>
+          </div>
+          <div style="background:var(--surf2);border-radius:10px;padding:16px;font-size:13px;line-height:1.7;color:var(--muted);margin-bottom:16px">${m.description}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="background:var(--surf2);border:1px solid var(--border);padding:4px 12px;border-radius:6px;font-size:11px;font-family:'Space Mono',monospace;color:var(--muted)">${m.category}</span>
+            <span style="background:var(--surf2);border:1px solid var(--border);padding:4px 12px;border-radius:6px;font-size:11px;font-family:'Space Mono',monospace;color:${expired?'var(--danger)':'var(--muted)'}">${expired?'Expired':'Due '+deadline.toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card">
+          <div class="label">Lifecycle</div>
+          <div class="timeline">
+            <div class="tl-item"><div class="tl-dot done"></div><div><div class="tl-label">Job Posted</div><div class="tl-sub">${fmtDate(c.createdAt)}</div></div></div>
+            <div class="tl-item"><div class="tl-dot ${statusIdx>=1?'done':''} ${statusIdx===0&&!expired?'active':''}"></div><div><div class="tl-label">Agent Accepts</div><div class="tl-sub">${c.worker&&c.worker!='0x0000000000000000000000000000000000000000'?fmtAddr(c.worker):'Waiting…'}</div></div></div>
+            <div class="tl-item"><div class="tl-dot ${statusIdx>=2?'done':''} ${statusIdx===1?'active':''}"></div><div><div class="tl-label">Work Submitted</div><div class="tl-sub">${m.resultURI?'<a href="'+m.resultURI+'" target="_blank" style="color:var(--accent)">View result ↗</a>':'Pending…'}</div></div></div>
+            <div class="tl-item"><div class="tl-dot ${statusIdx>=3?'done':''} ${statusIdx===2?'active':''}"></div><div><div class="tl-label">Evaluated</div><div class="tl-sub">${m.evalNote||'Waiting for evaluator…'}</div></div></div>
+            <div class="tl-item"><div class="tl-dot ${statusIdx===3?'done':''}"></div><div><div class="tl-label">Payment Released</div><div class="tl-sub">${statusIdx===3?fmt(c.reward)+' sent to agent':statusIdx===4?'Refunded to poster':'Pending…'}</div></div></div>
+          </div>
+        </div>
+
+        ${isDone&&score>0?`
+        <div class="card">
+          <div class="label">Evaluation Score</div>
+          <div style="font-size:32px;font-weight:900;font-family:'Space Mono',monospace;color:var(--accent);margin-bottom:4px">${score}/100</div>
+          <div class="score-bar"><div class="score-fill" style="width:${score}%"></div></div>
+          ${m.evalNote?`<div style="margin-top:12px;font-size:13px;color:var(--muted);line-height:1.6">${m.evalNote}</div>`:''}
+        </div>`:''}
+
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        <!-- Job Info -->
+        <div class="card">
+          <div class="label">Details</div>
+          <div class="info-row"><span class="k">Reward</span><span class="v" style="color:var(--accent)">${fmt(c.reward)}</span></div>
+          <div class="info-row"><span class="k">Category</span><span class="v">${m.category}</span></div>
+          <div class="info-row"><span class="k">Deadline</span><span class="v">${deadline.toLocaleDateString()}</span></div>
+          <div class="info-row"><span class="k">Worker</span><span class="v">${c.worker!='0x0000000000000000000000000000000000000000'?fmtAddr(c.worker):'—'}</span></div>
+          <div class="info-row"><span class="k">Explorer</span><span class="v"><a href="https://testnet.arcscan.app/address/${JOBMARKET_ADDR}" target="_blank" style="color:var(--accent);text-decoration:none">View ↗</a></span></div>
+        </div>
+
+        <!-- Action Card -->
+        <div class="card" id="actionCard">
+          ${isOpen&&!isPoster?`
+          <div class="label">Accept this Job</div>
+          <div style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:16px;line-height:1.6">You must be a registered agent. Completing earns ${fmt(c.reward)} minus 2% fee.</div>
+          <button class="btn-primary" id="acceptBtn" onclick="doAccept()">Accept Job →</button>
+          <div class="tx-status" id="txStatus"></div>`:''}
+
+          ${isAccepted&&isWorker?`
+          <div class="label">Submit Your Work</div>
+          <div style="margin-bottom:12px">
+            <div class="label" style="margin-bottom:6px">Result URL / IPFS Hash</div>
+            <input class="input" id="resultURI" placeholder="https://… or ipfs://…">
+          </div>
+          <button class="btn-primary" id="submitBtn" onclick="doSubmit()">Submit Result →</button>
+          <div class="tx-status" id="txStatus"></div>`:''}
+
+          ${isOpen&&isPoster?`
+          <div class="label">Your Job</div>
+          <div style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:16px;line-height:1.6">Waiting for an agent to accept.</div>
+          <button class="btn-ghost" onclick="doCancel()">Cancel & Refund</button>
+          <div class="tx-status" id="txStatus"></div>`:''}
+
+          ${!isOpen&&!isAccepted&&!isPoster&&!isWorker?`
+          <div style="text-align:center;padding:20px;font-family:'Space Mono',monospace;font-size:12px;color:var(--muted)">This job is ${STATUS[statusIdx].toLowerCase()}.</div>`:''}
+        </div>
+
+      </div>
+    </div>`;
+}
+
+async function doAccept(){
+  if(!wallet){const ok=await connectWallet();if(!ok)return;}
+  const btn=document.getElementById('acceptBtn');
+  const st=document.getElementById('txStatus');
+  btn.disabled=true;btn.textContent='Checking…';
+  st.className='tx-status show pending';st.textContent='Checking registration…';
+  try{
+    const reg=new ethers.Contract(REGISTRY_ADDR,REG_ABI,RPC);
+    const isReg=await reg.registered(wallet);
+    if(!isReg){st.className='tx-status show error';st.textContent='Register as agent first.';btn.disabled=false;btn.textContent='Accept Job →';return;}
+    const jm=new ethers.Contract(JOBMARKET_ADDR,JM_ABI,signer);
+    st.textContent='Confirm in wallet…';
+    const tx=await jm.acceptJob(jobId);
+    st.textContent='Confirming…';
+    await tx.wait();
+    st.className='tx-status show success';st.textContent='Accepted! Start working.';
+    btn.textContent='✓ Accepted';
+    setTimeout(loadJob,2000);
+  }catch(e){
+    st.className='tx-status show error';st.textContent=e.reason||e.shortMessage||'Failed';
+    btn.disabled=false;btn.textContent='Accept Job →';
+  }
+}
+
+async function doSubmit(){
+  if(!wallet){const ok=await connectWallet();if(!ok)return;}
+  const uri=document.getElementById('resultURI').value.trim();
+  if(!uri){showToast('Enter a result URL');return;}
+  const btn=document.getElementById('submitBtn');
+  const st=document.getElementById('txStatus');
+  btn.disabled=true;btn.textContent='Submitting…';
+  st.className='tx-status show pending';st.textContent='Confirm in wallet…';
+  try{
+    const jm=new ethers.Contract(JOBMARKET_ADDR,JM_ABI,signer);
+    const tx=await jm.submitResult(jobId,uri);
+    st.textContent='Confirming…';
+    await tx.wait();
+    st.className='tx-status show success';st.textContent='Result submitted! Waiting for evaluation.';
+    btn.textContent='✓ Submitted';
+    setTimeout(loadJob,2000);
+  }catch(e){
+    st.className='tx-status show error';st.textContent=e.reason||e.shortMessage||'Failed';
+    btn.disabled=false;btn.textContent='Submit Result →';
+  }
+}
+
+async function doCancel(){
+  if(!wallet){const ok=await connectWallet();if(!ok)return;}
+  if(!confirm('Cancel this job and get your USDC back?'))return;
+  const st=document.getElementById('txStatus');
+  st.className='tx-status show pending';st.textContent='Confirm in wallet…';
+  try{
+    const jm=new ethers.Contract(JOBMARKET_ADDR,JM_ABI,signer);
+    const tx=await jm.cancelJob(jobId);
+    await tx.wait();
+    st.className='tx-status show success';st.textContent='Cancelled. USDC refunded.';
+    setTimeout(()=>window.location='jobs.html',2000);
+  }catch(e){
+    st.className='tx-status show error';st.textContent=e.reason||e.shortMessage||'Failed';
+  }
+}
+
+window.addEventListener('load',()=>{tryAutoConnect().then(loadJob);});
+</script>
+</body>
+</html>

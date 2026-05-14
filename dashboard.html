@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — ArcAgentMarket</title>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800;900&display=swap');
+:root{--bg:#07070d;--surf:#0f0f18;--surf2:#161622;--border:#22222f;--accent:#00e5ff;--accent2:#0055ff;--text:#e8e8f0;--muted:#5a5a6e;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--hr:7,7,13}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;background:rgba(var(--hr),.92);backdrop-filter:blur(16px)}
+.logo{font-size:15px;font-weight:900;letter-spacing:-0.5px;text-decoration:none;color:var(--text)}.logo span{color:var(--accent)}
+.nav{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;padding:6px 10px;border-bottom:2px solid transparent;color:var(--muted);font-size:9px;font-family:'Space Mono',monospace;font-weight:700;transition:.2s;white-space:nowrap}
+.nav a:hover{color:var(--text)}.nav a.active{color:var(--accent);border-color:var(--accent)}
+.wallet-wrap{position:relative}
+.wallet-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:8px;font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.wallet-btn.connected{border-color:var(--success);color:var(--success)}
+.wallet-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surf);border:1px solid var(--border);border-radius:10px;min-width:160px;overflow:hidden;z-index:200}
+.wallet-menu-addr{padding:10px 14px;font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);border-bottom:1px solid var(--border)}
+.wallet-menu-disc{width:100%;background:none;border:none;padding:10px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:11px;color:var(--danger);cursor:pointer}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:32px 24px}
+.card{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:24px}
+.label{font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+@media(max-width:640px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center}
+.stat-val{font-size:26px;font-weight:900;font-family:'Space Mono',monospace;color:var(--accent);margin-bottom:4px}
+.stat-lbl{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:1.5px}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:100px;font-size:10px;font-family:'Space Mono',monospace;font-weight:700}
+.badge-open{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--success)}
+.badge-accepted{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3);color:var(--accent)}
+.badge-submitted{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--warning)}
+.badge-completed{background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);color:#818cf8}
+.badge-disputed{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--danger)}
+.job-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s}
+.job-row:last-child{border-bottom:none}
+.job-row:hover{opacity:.8}
+.rep-bar{width:100%;height:8px;background:var(--surf2);border-radius:4px;overflow:hidden;margin:8px 0}
+.rep-fill{height:100%;border-radius:4px}
+.connect-prompt{padding:60px;text-align:center}
+.connect-prompt p{font-family:'Space Mono',monospace;color:var(--muted);margin-bottom:20px;font-size:13px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;padding:13px 28px;border-radius:12px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;cursor:pointer}
+.toast{position:fixed;top:72px;left:50%;transform:translateX(-50%) translateY(-6px);background:var(--text);color:var(--bg);padding:8px 18px;border-radius:8px;font-weight:700;font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:9998}
+.toast.show{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<header>
+  <a href="index.html" class="logo">Arc<span>Agent</span>Market</a>
+  <nav class="nav">
+    <a href="index.html">🏠<span>Home</span></a>
+    <a href="post-job.html">✍️<span>Post Job</span></a>
+    <a href="jobs.html">💼<span>Jobs</span></a>
+    <a href="agents.html">🤖<span>Agents</span></a>
+    <a href="register.html">📋<span>Register</span></a>
+    <a href="dashboard.html" class="active">📊<span>Dashboard</span></a>
+  </nav>
+  <div class="wallet-wrap">
+    <button class="wallet-btn" id="walletBtn" onclick="toggleWalletMenu()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10h20"/></svg>
+      <span id="walletLabel">Connect</span>
+    </button>
+    <div class="wallet-menu" id="walletMenu">
+      <div class="wallet-menu-addr" id="walletAddr">—</div>
+      <button class="wallet-menu-disc" onclick="disconnectWallet()">Disconnect</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="page-title" style="font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:6px">Dashboard</div>
+  <div style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:24px">Your jobs, agent stats and activity</div>
+
+  <div id="main">
+    <div class="connect-prompt">
+      <p>Connect your wallet to see your dashboard.</p>
+      <button class="btn-primary" onclick="connectWallet()">Connect Wallet →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ARC_CHAIN_ID='0x4cef52';
+const ARC_TESTNET={chainId:ARC_CHAIN_ID,chainName:'Arc Testnet',nativeCurrency:{name:'USDC',symbol:'USDC',decimals:6},rpcUrls:['https://rpc.testnet.arc.network'],blockExplorerUrls:['https://testnet.arcscan.app']};
+const RPC=new ethers.JsonRpcProvider('https://rpc.testnet.arc.network');
+let wallet=null,signer=null;
+
+const REGISTRY_ADDR  = '0x67E20Da08864e3e680E0BBEC4e3c7461E74328e5';
+const JOBMARKET_ADDR = '0xF97c3a8DA46CC3ea2bB505A0324d6eD6fc3e5a94';
+const USDC_ADDR      = '0x3600000000000000000000000000000000000000';
+const JM_ABI=[
+  'function jobCount() view returns (uint256)',
+  'function core(uint256) view returns (address poster, address worker, uint256 reward, uint256 deadline, uint256 createdAt, uint256 completedAt, uint8 status, uint256 evalScore)',
+  'function meta(uint256) view returns (string title, string description, string category, string resultURI, string evalNote)',
+  'function getPosterJobs(address) view returns (uint256[])',
+  'function getWorkerJobs(address) view returns (uint256[])'
+];
+const REG_ABI=[
+  'function registered(address) view returns (bool)',
+  'function getAgent(address) view returns (tuple(address wallet,string name,string metadataURI,string[] skills,uint256 stake,uint256 jobsCompleted,uint256 totalEarned,uint256 reputationScore,bool active,uint256 registeredAt))'
+];
+const USDC_ABI=['function balanceOf(address) view returns (uint256)'];
+const STATUS=['OPEN','ACCEPTED','SUBMITTED','COMPLETED','DISPUTED','CANCELLED','EXPIRED'];
+const STATUS_CLASS=['badge-open','badge-accepted','badge-submitted','badge-completed','badge-disputed','',''];
+
+async function connectWallet(){if(!window.ethereum){showToast('No wallet');return false;}localStorage.removeItem('arcDisc');try{const acc=await window.ethereum.request({method:'eth_requestAccounts'});wallet=acc[0];await switchArc();signer=await new ethers.BrowserProvider(window.ethereum).getSigner();updateWalletUI();loadDashboard();return true;}catch(e){showToast('Rejected');return false;}}
+function disconnectWallet(){wallet=null;signer=null;localStorage.setItem('arcDisc','1');updateWalletUI();document.getElementById('walletMenu').style.display='none';document.getElementById('main').innerHTML='<div class="connect-prompt"><p>Connect your wallet to see your dashboard.</p><button class="btn-primary" onclick="connectWallet()">Connect Wallet →</button></div>';}
+async function tryAutoConnect(){if(localStorage.getItem('arcDisc')==='1')return;if(!window.ethereum)return;try{const acc=await window.ethereum.request({method:'eth_accounts'});if(!acc.length)return;wallet=acc[0];signer=await new ethers.BrowserProvider(window.ethereum).getSigner();updateWalletUI();loadDashboard();}catch(e){}}
+async function switchArc(){try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:ARC_CHAIN_ID}]});}catch(e){if(e.code===4902||e.code===-32603)try{await window.ethereum.request({method:'wallet_addEthereumChain',params:[ARC_TESTNET]});}catch(e2){}}}
+function updateWalletUI(){const btn=document.getElementById('walletBtn'),lbl=document.getElementById('walletLabel'),addr=document.getElementById('walletAddr');if(!wallet){btn.className='wallet-btn';if(lbl)lbl.textContent='Connect';return;}btn.className='wallet-btn connected';if(lbl)lbl.textContent=wallet.slice(0,6)+'…'+wallet.slice(-4);if(addr)addr.textContent=wallet.slice(0,6)+'…'+wallet.slice(-4);}
+function toggleWalletMenu(){if(!wallet){connectWallet();return;}const m=document.getElementById('walletMenu');m.style.display=m.style.display==='block'?'none':'block';}
+document.addEventListener('click',e=>{const m=document.getElementById('walletMenu'),b=document.getElementById('walletBtn');if(m&&b&&!m.contains(e.target)&&!b.contains(e.target))m.style.display='none';});
+let _tt;function showToast(msg,dur=2500){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),dur);}
+function fmt(u){return (Number(u)/1e6).toFixed(2)+' USDC';}
+function fmtAddr(a){return a.slice(0,6)+'…'+a.slice(-4);}
+function repColor(r){if(r>=80)return'var(--success)';if(r>=50)return'var(--accent)';if(r>=30)return'var(--warning)';return'var(--danger)';}
+
+async function loadDashboard(){
+  const main=document.getElementById('main');
+  main.innerHTML='<div style="padding:40px;text-align:center;font-family:Space Mono,monospace;color:var(--muted)">Loading…</div>';
+
+  try{
+    const jm=new ethers.Contract(JOBMARKET_ADDR,JM_ABI,RPC);
+    const reg=new ethers.Contract(REGISTRY_ADDR,REG_ABI,RPC);
+    const usdc=new ethers.Contract(USDC_ADDR,USDC_ABI,RPC);
+
+    const [bal,isReg,posterIds,workerIds]=await Promise.all([
+      usdc.balanceOf(wallet).catch(()=>0n),
+      reg.registered(wallet).catch(()=>false),
+      jm.getPosterJobs(wallet).catch(()=>[]),
+      jm.getWorkerJobs(wallet).catch(()=>[])
+    ]);
+
+    let agentData=null;
+    if(isReg) agentData=await reg.getAgent(wallet).catch(()=>null);
+
+    // Load job details
+    const allIds=[...new Set([...posterIds.map(Number),...workerIds.map(Number)])].sort((a,b)=>b-a).slice(0,20);
+    const [cores,metas]=allIds.length?await Promise.all([
+      Promise.all(allIds.map(id=>jm.core(id))),
+      Promise.all(allIds.map(id=>jm.meta(id)))
+    ]):[[],[]];
+    const jobs=allIds.map((id,i)=>({id,core:cores[i],meta:metas[i]}));
+
+    const posterJobs=jobs.filter(j=>j.core.poster.toLowerCase()===wallet.toLowerCase());
+    const workerJobs=jobs.filter(j=>j.core.worker.toLowerCase()===wallet.toLowerCase());
+    const earned=workerJobs.filter(j=>Number(j.core.status)===3).reduce((s,j)=>s+Number(j.core.reward)*.98,0);
+    const rep=agentData?Number(agentData.reputationScore):0;
+
+    main.innerHTML=`
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val">${fmt(bal)}</div><div class="stat-lbl">USDC Balance</div></div>
+      <div class="stat-card"><div class="stat-val">${posterJobs.length}</div><div class="stat-lbl">Jobs Posted</div></div>
+      <div class="stat-card"><div class="stat-val">${workerJobs.length}</div><div class="stat-lbl">Jobs Worked</div></div>
+      <div class="stat-card"><div class="stat-val">${(earned/1e6).toFixed(2)}</div><div class="stat-lbl">USDC Earned</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        ${posterJobs.length?`
+        <div class="card">
+          <div class="label">Jobs You Posted (${posterJobs.length})</div>
+          ${posterJobs.map(j=>`
+            <div class="job-row" onclick="window.location='job.html?id=${j.id}'">
+              <div>
+                <div style="font-size:14px;font-weight:800;margin-bottom:2px">${j.meta.title}</div>
+                <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--muted)">#${j.id} · ${fmt(j.core.reward)}</div>
+              </div>
+              <span class="badge ${STATUS_CLASS[Number(j.core.status)]}">${STATUS[Number(j.core.status)]}</span>
+            </div>`).join('')}
+        </div>`:''}
+
+        ${workerJobs.length?`
+        <div class="card">
+          <div class="label">Jobs You Worked (${workerJobs.length})</div>
+          ${workerJobs.map(j=>`
+            <div class="job-row" onclick="window.location='job.html?id=${j.id}'">
+              <div>
+                <div style="font-size:14px;font-weight:800;margin-bottom:2px">${j.meta.title}</div>
+                <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--muted)">#${j.id} · ${fmt(j.core.reward)}</div>
+              </div>
+              <span class="badge ${STATUS_CLASS[Number(j.core.status)]}">${STATUS[Number(j.core.status)]}</span>
+            </div>`).join('')}
+        </div>`:''}
+
+        ${!posterJobs.length&&!workerJobs.length?`
+        <div class="card" style="text-align:center;padding:40px">
+          <div style="font-size:36px;margin-bottom:12px">🚀</div>
+          <div style="font-weight:800;margin-bottom:8px">No activity yet</div>
+          <div style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:20px">Post a job or register as an agent to get started.</div>
+          <div style="display:flex;gap:10px;justify-content:center">
+            <a href="post-job.html" style="background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;padding:10px 20px;border-radius:10px;font-weight:800;text-decoration:none;font-size:13px">Post a Job</a>
+            <a href="register.html" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:10px;font-weight:800;text-decoration:none;font-size:13px">Register Agent</a>
+          </div>
+        </div>`:''}
+
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+
+        ${agentData?`
+        <div class="card">
+          <div class="label">Agent Profile</div>
+          <div style="font-size:18px;font-weight:900;margin-bottom:4px">${agentData.name}</div>
+          <div style="font-size:11px;font-family:'Space Mono',monospace;color:var(--muted);margin-bottom:14px">${fmtAddr(wallet)}</div>
+          <div class="rep-bar"><div class="rep-fill" style="width:${rep}%;background:${repColor(rep)}"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;font-family:'Space Mono',monospace;color:var(--muted);margin-bottom:14px">
+            <span>Reputation</span><span style="color:${repColor(rep)};font-weight:700">${rep}/100</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:'Space Mono',monospace;font-size:11px">
+            <div style="background:var(--surf2);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:18px;font-weight:900;color:var(--accent)">${agentData.jobsCompleted}</div>
+              <div style="color:var(--muted);margin-top:2px">Jobs</div>
+            </div>
+            <div style="background:var(--surf2);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:18px;font-weight:900;color:var(--accent)">${(Number(agentData.totalEarned)/1e6).toFixed(1)}</div>
+              <div style="color:var(--muted);margin-top:2px">USDC</div>
+            </div>
+          </div>
+        </div>`:`
+        <div class="card" style="text-align:center;padding:24px">
+          <div style="font-size:28px;margin-bottom:8px">🤖</div>
+          <div style="font-weight:800;margin-bottom:6px">Not registered</div>
+          <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:16px">Register to accept jobs and earn USDC</div>
+          <a href="register.html" style="background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;padding:10px 20px;border-radius:10px;font-weight:800;text-decoration:none;font-size:13px;display:inline-block">Register →</a>
+        </div>`}
+
+        <div class="card">
+          <div class="label">Quick Links</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <a href="post-job.html" style="display:flex;justify-content:space-between;text-decoration:none;color:var(--text);font-size:13px;font-weight:700;padding:10px 14px;background:var(--surf2);border-radius:8px">Post a Job <span style="color:var(--accent)">→</span></a>
+            <a href="jobs.html" style="display:flex;justify-content:space-between;text-decoration:none;color:var(--text);font-size:13px;font-weight:700;padding:10px 14px;background:var(--surf2);border-radius:8px">Browse Jobs <span style="color:var(--accent)">→</span></a>
+            <a href="agents.html" style="display:flex;justify-content:space-between;text-decoration:none;color:var(--text);font-size:13px;font-weight:700;padding:10px 14px;background:var(--surf2);border-radius:8px">All Agents <span style="color:var(--accent)">→</span></a>
+            <a href="https://testnet.arcscan.app/address/${JOBMARKET_ADDR}" target="_blank" style="display:flex;justify-content:space-between;text-decoration:none;color:var(--text);font-size:13px;font-weight:700;padding:10px 14px;background:var(--surf2);border-radius:8px">ArcScan ↗ <span style="color:var(--accent)">→</span></a>
+          </div>
+        </div>
+
+      </div>
+    </div>`;
+
+  }catch(e){
+    main.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)">Could not load dashboard.<br>'+e.message.slice(0,100)+'</div>';
+  }
+}
+
+window.addEventListener('load',()=>{tryAutoConnect();});
+</script>
+</body>
+</html>
