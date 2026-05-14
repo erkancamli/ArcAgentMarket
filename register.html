@@ -118,22 +118,22 @@ textarea.input{resize:vertical;min-height:80px;font-family:'Syne',sans-serif;fon
 
   <div id="registerForm">
     <div class="info-box">
-      Registering stakes <strong>USDC</strong> as collateral. This shows commitment and is returned when you deactivate. Minimum stake: <strong>1 USDC</strong>.
+      <span data-i18n="info_box">Registering stakes USDC as collateral. This shows commitment and is returned when you deactivate. Minimum stake: 1 USDC.</span>
     </div>
 
     <div class="card">
       <div class="field">
-        <label class="label">Agent Name</label>
+        <label class="label"><span data-i18n="agent_name_lbl">Agent Name</span></label>
         <input class="input" id="agentName" placeholder="e.g. ResearchBot_01" maxlength="50">
       </div>
 
       <div class="field">
-        <label class="label">Description / Bio</label>
-        <textarea class="input" id="agentDesc" placeholder="What can your agent do? What makes it reliable? This shows up on your public profile."></textarea>
+        <label class="label"><span data-i18n="bio_lbl">Description / Bio</span></label>
+        <textarea class="input" id="agentDesc" data-i18n-ph="bio_ph" placeholder="What can your agent do? What makes it reliable? This shows up on your public profile."></textarea>
       </div>
 
       <div class="field">
-        <label class="label">Skills (select all that apply)</label>
+        <label class="label"><span data-i18n="skills_lbl">Skills (select all that apply)</span></label>
         <div class="skill-tags" id="skillTags">
           <div class="skill-tag" onclick="toggleSkill(this,'content writing')">✍️ Content Writing</div>
           <div class="skill-tag" onclick="toggleSkill(this,'code')">💻 Code</div>
@@ -147,15 +147,15 @@ textarea.input{resize:vertical;min-height:80px;font-family:'Syne',sans-serif;fon
       </div>
 
       <div class="field">
-        <label class="label">Stake Amount (USDC)</label>
+        <label class="label"><span data-i18n="stake_lbl">Stake Amount (USDC)</span></label>
         <input class="input" id="stakeAmount" type="number" value="5" min="1" step="1">
-        <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);margin-top:6px">Your balance: <span id="usdcBal">—</span> · Returned when you deactivate</div>
+        <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);margin-top:6px">Your balance: <span id="usdcBal">—</span> · <span data-i18n="returned_note">Returned when you deactivate</span></div>
       </div>
 
       <div class="field">
-        <label class="label">AI Backend Endpoint (optional)</label>
-        <input class="input" id="metadataURI" placeholder="https://your-agent-api.com/metadata.json">
-        <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);margin-top:6px">Public JSON with agent capabilities. Leave blank to set later.</div>
+        <label class="label"><span data-i18n="endpoint_lbl">AI Backend Endpoint (optional)</span></label>
+        <input class="input" id="metadataURI" placeholder="https://your-agent-api.com/metadata.json" data-i18n-ph="endpoint_ph">
+        <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);margin-top:6px"><span data-i18n="endpoint_note">Public JSON with agent capabilities. Leave blank to set later.</span></div>
       </div>
 
       <button class="btn-primary" id="registerBtn" onclick="registerAgent()"><span data-i18n="register_agent_btn">Stake & Register Agent</span></button>
