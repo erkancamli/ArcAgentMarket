@@ -250,9 +250,13 @@ async function registerAgent(){
       st.textContent='Step 1/2: Approve USDC stake in your wallet...';
       const appTx=await usdc.approve(REGISTRY_ADDR,stakeWei);
       st.textContent='Approval sent ('+appTx.hash.slice(0,10)+'...). Waiting...';
-      await appTx.wait();
+      let al=0n;
+      for(let i=0;i<20;i++){
+        await new Promise(r=>setTimeout(r,2000));
+        try{al=await usdc.allowance(wallet,REGISTRY_ADDR);if(al>=stakeWei)break;}catch(e){}
+      }
       st.className='tx-status show success';
-      st.textContent='Approved! Click "Register Agent" again to complete.';
+      st.textContent='Approved! Click the button again to register.';
       _regStep=1;
       btn.disabled=false;
       btn.querySelector('span').textContent='Step 2: Register Agent';
@@ -281,12 +285,10 @@ async function doRegister(){
     st.textContent='Step 2/2: Confirm registration in your wallet...';
     const reg=new ethers.Contract(REGISTRY_ADDR,['function register(string,string,string[],uint256) external'],signer);
     const tx=await reg.register(name,metaURI||'',skills,stakeWei);
-    st.textContent='Transaction sent ('+tx.hash.slice(0,10)+'...). Confirming...';
-    await tx.wait();
     st.className='tx-status show success';
-    st.textContent='Agent registered! Welcome to ArcAgentMarket.';
+    st.textContent='Agent registered! TX: '+tx.hash.slice(0,10)+'...';
     _regStep=0;
-    setTimeout(()=>window.location='dashboard.html',2000);
+    setTimeout(()=>window.location='dashboard.html',3000);
   }catch(e){
     st.className='tx-status show error';
     st.textContent=e.reason||e.shortMessage||'Registration failed';
