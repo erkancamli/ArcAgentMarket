@@ -182,15 +182,15 @@ async function postJob(){
     if(allowance<rewardWei){
       const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei);
       st.textContent='Confirming approval…';
-      await appTx.wait();
+      await appTx.wait({timeout:60000});
     }
     st.textContent='Posting job…';
     const jm=new ethers.Contract(JOBMARKET_ADDR,['function postJob(string,string,string,uint256,uint256) external returns (uint256)'],signer);
     const tx=await jm.postJob(title,desc,category,rewardWei,deadline);
-    st.textContent='Confirming…';
-    const receipt=await tx.wait();
+    st.textContent='Confirming tx…';
+    await tx.wait({timeout:60000});
     st.className='tx-status show success';
-    st.textContent='Job posted! Redirecting…';
+    st.textContent='✓ Job posted!';
     setTimeout(()=>window.location='jobs.html',2000);
   }catch(e){
     st.className='tx-status show error';
