@@ -237,25 +237,45 @@ async function postJob(){
       }
       btn.disabled=true;
       st.className='tx-status show pending';st.textContent='Step 1/2: Approve USDC in your wallet...';
-      const gp0=ethers.parseUnits('2','gwei');
-      const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei,{gasPrice:gp0,gasLimit:100000n});
-      st.textContent='Approval sent ('+appTx.hash.slice(0,10)+'...). Waiting for confirmation...';
-      // Wait for approval with polling instead of blocking wait()
+      let appTx2;
+      try{
+        const gp0=ethers.parseUnits('2','gwei');
+        appTx2=await usdc.approve(JOBMARKET_ADDR,rewardWei,{gasPrice:gp0,gasLimit:100000n});
+      }catch(rejectErr){
+        // Rejected — check if already approved
+        const al2=await usdc.allowance(wallet,JOBMARKET_ADDR).catch(()=>0n);
+        if(al2>=rewardWei){
+          st.className='tx-status show success';
+          st.textContent='Already approved! Click again to post.';
+          _postStep=1;btn.disabled=false;
+          btn.querySelector('span').textContent='Step 2: Post Job';
+          return;
+        }
+        throw rejectErr;
+      }
+      st.textContent='Approval sent ('+appTx2.hash.slice(0,10)+'...). Waiting...';
       let al=0n;
       for(let i=0;i<20;i++){
         await new Promise(r=>setTimeout(r,2000));
         try{al=await usdc.allowance(wallet,JOBMARKET_ADDR);if(al>=rewardWei)break;}catch(e){}
       }
       st.className='tx-status show success';
-      st.textContent='Approved! Click the button again to post job.';
-      _postStep=1;
-      btn.disabled=false;
+      st.textContent='Approved! Click again to post job.';
+      _postStep=1;btn.disabled=false;
       btn.querySelector('span').textContent='Step 2: Post Job';
     }catch(e){
+      // On any error re-check allowance
+      const alCheck=await usdc.allowance(wallet,JOBMARKET_ADDR).catch(()=>0n);
+      if(alCheck>=rewardWei){
+        st.className='tx-status show success';
+        st.textContent='Already approved! Click again to post.';
+        _postStep=1;btn.disabled=false;
+        btn.querySelector('span').textContent='Step 2: Post Job';
+        return;
+      }
       st.className='tx-status show error';
-      st.textContent=e.reason||e.shortMessage||'Approval failed';
-      btn.disabled=false;
-      _postStep=0;
+      st.textContent=e.reason||e.shortMessage||e.message||'Approval failed';
+      btn.disabled=false;_postStep=0;
     }
     return;
   }
