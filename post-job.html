@@ -6,10 +6,19 @@
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800;900&display=swap');
-:root{--bg:#07070d;--surf:#0f0f18;--surf2:#161622;--border:#22222f;--accent:#00e5ff;--accent2:#0055ff;--text:#e8e8f0;--muted:#5a5a6e;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--hr:7,7,13}
+:root{
+  --bg:#f0f4f8;--surf:#ffffff;--surf2:#e8edf3;--border:#d0dae6;
+  --accent:#0088aa;--accent2:#0044cc;--text:#0d1220;--muted:#5a7080;
+  --success:#059669;--danger:#dc2626;--warning:#d97706;--hr:240,244,248;
+}
+[data-theme=dark]{
+  --bg:#07070d;--surf:#0f0f18;--surf2:#161622;--border:#22222f;
+  --accent:#00e5ff;--accent2:#0055ff;--text:#e8e8f0;--muted:#5a5a6e;
+  --success:#10b981;--danger:#ef4444;--warning:#f59e0b;--hr:7,7,13;
+}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
 header{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;background:rgba(var(--hr),.92);backdrop-filter:blur(16px)}
 .logo{font-size:15px;font-weight:900;letter-spacing:-0.5px;text-decoration:none;color:var(--text)}.logo span{color:var(--accent)}
 .nav{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
@@ -54,7 +63,8 @@ select.input{cursor:pointer}
     <a href="register.html">📋<span>Register</span></a>
     <a href="dashboard.html">📊<span>Dashboard</span></a>
   </nav>
-  <div class="wallet-wrap">
+  <button id="themeBtn" onclick="toggleTheme()" style="background:transparent;border:1px solid var(--border);color:var(--muted);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;flex-shrink:0">🌙</button>
+    <div class="wallet-wrap">
     <button class="wallet-btn" id="walletBtn" onclick="toggleWalletMenu()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10h20"/></svg>
       <span id="walletLabel">Connect</span>
