@@ -285,10 +285,16 @@ async function doRegister(){
     st.textContent='Step 2/2: Confirm registration in your wallet...';
     const reg=new ethers.Contract(REGISTRY_ADDR,['function register(string,string,string[],uint256) external'],signer);
     const tx=await reg.register(name,metaURI||'',skills,stakeWei);
+    st.textContent='TX sent: '+tx.hash.slice(0,12)+'... waiting for confirmation';
+    const receipt=await Promise.race([
+      tx.wait(),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),90000))
+    ]);
+    if(receipt&&receipt.status===0)throw new Error('Transaction reverted');
     st.className='tx-status show success';
-    st.textContent='Agent registered! TX: '+tx.hash.slice(0,10)+'...';
+    st.textContent='Agent registered! Welcome to ArcAgentMarket.';
     _regStep=0;
-    setTimeout(()=>window.location='dashboard.html',3000);
+    setTimeout(()=>window.location='dashboard.html',2000);
   }catch(e){
     st.className='tx-status show error';
     st.textContent=e.reason||e.shortMessage||'Registration failed';
