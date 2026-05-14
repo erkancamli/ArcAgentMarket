@@ -237,8 +237,7 @@ async function postJob(){
       }
       btn.disabled=true;
       st.className='tx-status show pending';st.textContent='Step 1/2: Approve USDC in your wallet...';
-      const feeData0=await signer.provider.getFeeData();
-      const gp0=feeData0.gasPrice||ethers.parseUnits('1','gwei');
+      const gp0=ethers.parseUnits('2','gwei');
       const appTx=await usdc.approve(JOBMARKET_ADDR,rewardWei,{gasPrice:gp0,gasLimit:100000n});
       st.textContent='Approval sent ('+appTx.hash.slice(0,10)+'...). Waiting for confirmation...';
       // Wait for approval with polling instead of blocking wait()
@@ -275,8 +274,7 @@ async function doPostJob(){
     btn.disabled=true;
     st.className='tx-status show pending';st.textContent='Step 2/2: Confirm job posting in your wallet...';
     const jm=new ethers.Contract(JOBMARKET_ADDR,['function postJob(string,string,string,uint256,uint256) external returns (uint256)'],signer);
-    const feeData=await signer.provider.getFeeData();
-    const gasPrice=feeData.gasPrice||ethers.parseUnits('1','gwei');
+    const gasPrice=ethers.parseUnits('2','gwei');
     const tx=await jm.postJob(title,desc,category,rewardWei,deadline,{gasPrice,gasLimit:500000n});
     const txUrl='https://testnet.arcscan.app/tx/'+tx.hash;
     st.className='tx-status show pending';
