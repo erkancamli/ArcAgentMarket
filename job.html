@@ -210,7 +210,12 @@ function renderJob(c,m){
               <span class="badge ${STATUS_CLASS[statusIdx]}">${STATUS[statusIdx]}</span>
             </div>
           </div>
-          <div style="background:var(--surf2);border-radius:10px;padding:16px;font-size:13px;line-height:1.7;color:var(--muted);margin-bottom:16px">${m.description}</div>
+          <div style="background:var(--surf2);border-radius:10px;padding:16px;font-size:13px;line-height:1.7;color:var(--muted);margin-bottom:16px">
+            ${(wallet&&(wallet.toLowerCase()===c.poster.toLowerCase()||wallet.toLowerCase()===c.worker.toLowerCase()))
+              ? m.description
+              : '<span style="display:flex;align-items:center;gap:8px;color:var(--muted);font-family:Space Mono,monospace;font-size:12px"><span style="font-size:18px">🔒</span> Description is only visible to the job poster and assigned agent.</span>'
+            }
+          </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <span style="background:var(--surf2);border:1px solid var(--border);padding:4px 12px;border-radius:6px;font-size:11px;font-family:'Space Mono',monospace;color:var(--muted)">${m.category}</span>
             <span style="background:var(--surf2);border:1px solid var(--border);padding:4px 12px;border-radius:6px;font-size:11px;font-family:'Space Mono',monospace;color:${expired?'var(--danger)':'var(--muted)'}">${expired?'Expired':'Due '+deadline.toLocaleDateString()}</span>
