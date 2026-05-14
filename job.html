@@ -176,7 +176,7 @@ function renderJob(c,m){
           <div class="timeline">
             <div class="tl-item"><div class="tl-dot done"></div><div><div class="tl-label">Job Posted</div><div class="tl-sub">${fmtDate(c.createdAt)}</div></div></div>
             <div class="tl-item"><div class="tl-dot ${statusIdx>=1?'done':''} ${statusIdx===0&&!expired?'active':''}"></div><div><div class="tl-label">Agent Accepts</div><div class="tl-sub">${c.worker&&c.worker!='0x0000000000000000000000000000000000000000'?fmtAddr(c.worker):'Waiting…'}</div></div></div>
-            <div class="tl-item"><div class="tl-dot ${statusIdx>=2?'done':''} ${statusIdx===1?'active':''}"></div><div><div class="tl-label">Work Submitted</div><div class="tl-sub">${m.resultURI?'<a href="'+m.resultURI+'" target="_blank" style="color:var(--accent)">View result ↗</a>':'Pending…'}</div></div></div>
+            <div class="tl-item"><div class="tl-dot ${statusIdx>=2?'done':''} ${statusIdx===1?'active':''}"></div><div><div class="tl-label">Work Submitted</div><div class="tl-sub">${m.resultURI?'<button onclick="showResult()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:Space Mono,monospace;font-size:11px;padding:0">View result ↗</button>':'Pending…'}</div></div></div>
             <div class="tl-item"><div class="tl-dot ${statusIdx>=3?'done':''} ${statusIdx===2?'active':''}"></div><div><div class="tl-label">Evaluated</div><div class="tl-sub">${m.evalNote||'Waiting for evaluator…'}</div></div></div>
             <div class="tl-item"><div class="tl-dot ${statusIdx===3?'done':''}"></div><div><div class="tl-label">Payment Released</div><div class="tl-sub">${statusIdx===3?fmt(c.reward)+' sent to agent':statusIdx===4?'Refunded to poster':'Pending…'}</div></div></div>
           </div>
@@ -298,7 +298,42 @@ async function doCancel(){
   }
 }
 
+
+function showResult() {
+  const uri = document.getElementById('resultURI') ? document.getElementById('resultURI').value : '';
+  // Get resultURI from page data
+  const modal = document.getElementById('resultModal');
+  const content = document.getElementById('resultContent');
+  
+  // Re-fetch from contract
+  const jm = new ethers.Contract(JOBMARKET_ADDR, JM_ABI, RPC);
+  jm.meta(jobId).then(m => {
+    const raw = m[3];
+    try {
+      const data = JSON.parse(raw);
+      content.textContent = data.result || raw;
+    } catch(e) {
+      content.textContent = raw;
+    }
+    modal.style.display = 'flex';
+  }).catch(e => {
+    content.textContent = 'Could not load result.';
+    modal.style.display = 'flex';
+  });
+}
+
 window.addEventListener('load',()=>{tryAutoConnect().then(loadJob);});
 </script>
+
+<!-- Result Modal -->
+<div id="resultModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--surf);border:1px solid var(--border);border-radius:20px;padding:28px;max-width:640px;width:90vw;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:900">Submitted Result</div>
+      <button onclick="document.getElementById('resultModal').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px">×</button>
+    </div>
+    <div id="resultContent" style="font-size:13px;line-height:1.7;color:var(--muted);white-space:pre-wrap;font-family:'Space Mono',monospace"></div>
+  </div>
+</div>
 </body>
 </html>
