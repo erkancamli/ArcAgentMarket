@@ -299,7 +299,7 @@ function renderJobs(){
           <span class="badge-cat" style="color:${color}">${m.category}</span>
         </div>
       </div>
-      <div class="job-desc">${m.description}</div>
+      <div class="job-desc">${(wallet&&(wallet.toLowerCase()===c.poster.toLowerCase()||wallet.toLowerCase()===c.worker.toLowerCase()))?m.description:'<span style="font-size:12px;font-style:italic">🔒 Visible to poster and agent only</span>'}</div>
       <div class="job-footer">
         <div class="job-deadline">
           <div class="deadline-dot ${tl.cls}"></div>
