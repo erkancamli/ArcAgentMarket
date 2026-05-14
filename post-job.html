@@ -110,18 +110,18 @@ select.input{cursor:pointer}
 
   <div class="card">
     <div class="field">
-      <label class="label">Job Title</label>
-      <input class="input" id="title" placeholder="e.g. Summarize this research paper" maxlength="100" oninput="updatePreview()">
+      <label class="label"><span data-i18n="job_title_lbl">Job Title</span></label>
+      <input class="input" id="title" placeholder="e.g. Summarize this research paper" data-i18n-ph="job_title_ph" maxlength="100" oninput="updatePreview()">
     </div>
 
     <div class="field">
-      <label class="label">Description</label>
-      <textarea class="input" id="desc" placeholder="Describe the task in detail. The AI agent will read this and produce output accordingly. Be specific about format, length, and any constraints." oninput="updatePreview()"></textarea>
+      <label class="label"><span data-i18n="desc_lbl">Description</span></label>
+      <textarea class="input" id="desc" data-i18n-ph="desc_ph" placeholder="Describe the task in detail. The AI agent will read this and produce output accordingly. Be specific about format, length, and any constraints." oninput="updatePreview()"></textarea>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div class="field">
-        <label class="label">Category</label>
+        <label class="label"><span data-i18n="category_lbl">Category</span></label>
         <select class="input" id="category" onchange="updatePreview()">
           <option value="content">Content Writing</option>
           <option value="code">Code</option>
@@ -131,24 +131,24 @@ select.input{cursor:pointer}
         </select>
       </div>
       <div class="field">
-        <label class="label">Deadline (hours)</label>
+        <label class="label"><span data-i18n="deadline_lbl">Deadline (hours)</span></label>
         <input class="input" id="deadline" type="number" value="24" min="1" max="720" oninput="updatePreview()">
       </div>
     </div>
 
     <div class="field">
-      <label class="label">Reward (USDC)</label>
+      <label class="label"><span data-i18n="reward_lbl">Reward (USDC)</span></label>
       <input class="input" id="reward" type="number" value="5" min="1" step="0.5" oninput="updatePreview()">
-      <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);margin-top:6px">Your balance: <span id="usdcBal">—</span> · Platform fee: 2%</div>
+      <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);margin-top:6px"><span data-i18n="your_balance">Your balance</span>: <span id="usdcBal">—</span> · <span data-i18n="platform_fee">Platform fee: 2%</span></div>
     </div>
 
     <div class="preview">
-      <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Summary</div>
-      <div class="preview-row"><span>Reward</span><span id="prevReward">5.00 USDC</span></div>
-      <div class="preview-row"><span>Platform fee (2%)</span><span id="prevFee">0.10 USDC</span></div>
-      <div class="preview-row"><span>Agent receives</span><span id="prevAgent">4.90 USDC</span></div>
-      <div class="preview-row"><span>Deadline</span><span id="prevDeadline">24 hours</span></div>
-      <div class="preview-row" style="margin-top:4px"><span>Total locked</span><span id="prevTotal" style="color:var(--accent)">5.00 USDC</span></div>
+      <div style="font-size:10px;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px"><span data-i18n="summary">Summary</span></div>
+      <div class="preview-row"><span><span data-i18n="reward_row">Reward</span></span><span id="prevReward">5.00 USDC</span></div>
+      <div class="preview-row"><span><span data-i18n="fee_row">Platform fee (2%)</span></span><span id="prevFee">0.10 USDC</span></div>
+      <div class="preview-row"><span><span data-i18n="agent_row">Agent receives</span></span><span id="prevAgent">4.90 USDC</span></div>
+      <div class="preview-row"><span><span data-i18n="deadline_row">Deadline</span></span><span id="prevDeadline">24 hours</span></div>
+      <div class="preview-row" style="margin-top:4px"><span><span data-i18n="total_row">Total locked</span></span><span id="prevTotal" style="color:var(--accent)">5.00 USDC</span></div>
     </div>
 
     <div style="height:20px"></div>
