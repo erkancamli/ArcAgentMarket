@@ -223,11 +223,17 @@ function renderJob(c,m){
           <div class="timeline">
             <div class="tl-item"><div class="tl-dot done"></div><div><div class="tl-label">Job Posted</div><div class="tl-sub">${fmtDate(c.createdAt)}</div></div></div>
             <div class="tl-item"><div class="tl-dot ${statusIdx>=1?'done':''} ${statusIdx===0&&!expired?'active':''}"></div><div><div class="tl-label">Agent Accepts</div><div class="tl-sub">${c.worker&&c.worker!='0x0000000000000000000000000000000000000000'?fmtAddr(c.worker):'Waiting…'}</div></div></div>
-            <div class="tl-item"><div class="tl-dot ${statusIdx>=2?'done':''} ${statusIdx===1?'active':''}"></div><div><div class="tl-label">Work Submitted</div><div class="tl-sub">${m.resultURI?'<button onclick="showResult()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:Space Mono,monospace;font-size:11px;padding:0">View result ↗</button>':'Pending…'}</div></div></div>
+            <div class="tl-item"><div class="tl-dot ${statusIdx>=2?'done':''} ${statusIdx===1?'active':''}"></div><div><div class="tl-label">Work Submitted</div><div class="tl-sub">${m.resultURI?'<span style="color:var(--success);font-size:10px">Result submitted</span>':'Pending…'}</div></div></div>
             <div class="tl-item"><div class="tl-dot ${statusIdx>=3?'done':''} ${statusIdx===2?'active':''}"></div><div><div class="tl-label">Evaluated</div><div class="tl-sub">${m.evalNote||'Waiting for evaluator…'}</div></div></div>
             <div class="tl-item"><div class="tl-dot ${statusIdx===3?'done':''}"></div><div><div class="tl-label">Payment Released</div><div class="tl-sub">${statusIdx===3?fmt(c.reward)+' sent to agent':statusIdx===4?'Refunded to poster':'Pending…'}</div></div></div>
           </div>
         </div>
+
+        ${m.resultURI?`
+        <div class="card">
+          <div class="label">Submitted Result</div>
+          <div id="resultBox" style="margin-top:8px;background:var(--surf2);border-radius:10px;padding:16px;font-size:13px;line-height:1.8;color:var(--muted);white-space:pre-wrap;font-family:'Space Mono',monospace;word-break:break-word;max-height:400px;overflow-y:auto"></div>
+        </div>`:''}
 
         ${isDone&&score>0?`
         <div class="card">
@@ -369,7 +375,29 @@ function showResult() {
   });
 }
 
-window.addEventListener('load',()=>{tryAutoConnect().then(loadJob);if(typeof applyTranslations==='function')applyTranslations();});
+window.addEventListener('load',()=>{
+  tryAutoConnect().then(async()=>{
+    await loadJob();
+    // Populate result box after render
+    if(jobId){
+      try{
+        const jm2=new ethers.Contract(JOBMARKET_ADDR,JM_ABI,RPC);
+        const m2=await jm2.meta(jobId);
+        const raw=m2[3];
+        if(raw){
+          const box=document.getElementById('resultBox');
+          if(box){
+            try{
+              const data=JSON.parse(raw);
+              box.textContent=data.result||raw;
+            }catch(e){box.textContent=raw;}
+          }
+        }
+      }catch(e){}
+    }
+  });
+  if(typeof applyTranslations==='function')applyTranslations();
+});
 </script>
 
 <!-- Result Modal -->
