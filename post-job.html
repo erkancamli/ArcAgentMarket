@@ -274,10 +274,16 @@ async function doPostJob(){
     st.className='tx-status show pending';st.textContent='Step 2/2: Confirm job posting in your wallet...';
     const jm=new ethers.Contract(JOBMARKET_ADDR,['function postJob(string,string,string,uint256,uint256) external returns (uint256)'],signer);
     const tx=await jm.postJob(title,desc,category,rewardWei,deadline);
+    st.textContent='TX sent: '+tx.hash.slice(0,12)+'... waiting for confirmation';
+    const receipt=await Promise.race([
+      tx.wait(),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),90000))
+    ]);
+    if(receipt&&receipt.status===0)throw new Error('Transaction reverted');
     st.className='tx-status show success';
-    st.textContent='Job posted! TX: '+tx.hash.slice(0,10)+'...';
+    st.textContent='Job posted successfully!';
     _postStep=0;
-    setTimeout(()=>window.location='jobs.html',3000);
+    setTimeout(()=>window.location='jobs.html',2000);
   }catch(e){
     st.className='tx-status show error';
     st.textContent=e.reason||e.shortMessage||'Failed to post job';
